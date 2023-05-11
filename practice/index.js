@@ -46,8 +46,8 @@ const fs = require('fs');
 const connection = mysql.createConnection({
   host: 'localhost',
   user: 'root',
-  password: 'wlsyddlwhswkf1@',
-  database: 'my_db'
+  password: '',
+  database: ''
 });
 
 const fileContent = fs.readFileSync('uploads/inputFile.txt','utf-8');
