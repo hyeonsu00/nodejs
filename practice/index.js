@@ -45,13 +45,29 @@ app.post('/upload', upload.single('userfile'), (req, res) => {
     //     {host: 'localhost', user: 'root', password: 'wlsyddlwhswkf1@', database: 'my_db'}
     // );
 
-    const fileContent = fs.readFileSync('uploads/inputFile.txt', 'utf-8');
-    const frows = fileContent
-        .trim()
-        .trim('\n')
-        .split('\t')
-        .filter(num => !isNaN(num))
-        .filter(element => element !== '\n\n');
+const mysql = require('mysql');
+const fs = require('fs');
+
+// // inputFile.txt 파일 읽어들이기
+// fs.readFile('uploads/inputFile.txt', 'utf8', function(err, data) {
+//   if (err) throw err;
+//     const ffilter = data.trim().trim('\n').split('\t').filter(num => !isNaN(num));
+//     const sfilter = ffilter.filter(element => element !=='\n\n');
+//     console.log(sfilter);
+// });
+
+// MySQL connection 설정
+const connection = mysql.createConnection({
+  host: 'localhost',
+  user: 'root',
+  password: '',
+  database: ''
+});
+
+const fileContent = fs.readFileSync('uploads/inputFile.txt','utf-8');
+const frows = fileContent.trim().trim('\n').split('\t').filter(num => !isNaN(num));
+const srows = frows.filter(element => element !== '\n\n');
+console.log(srows);
 
 
     const rows = [];
