@@ -1,6 +1,23 @@
 <div>
     <h1>coren의 task별 수행 능력
     </h1>
+    <p></p>
+    <div>
+      <B>작업 단위</B>
+      <input type="button" value="task1">
+      <input type="button" value="task2">
+      <input type="button" value="task3">
+      <input type="button" value="task4">
+      <input type="button" value="task5">
+    </div>
+    <div>
+      <B>코어 단위</B>
+      <input type="button" value="core1">
+      <input type="button" value="core2">
+      <input type="button" value="core3">
+      <input type="button" value="core4">
+      <input type="button" value="core5">
+    </div>
     <canvas id="myChart"></canvas>
     
 </div>
@@ -15,7 +32,7 @@
         data: {
             labels: ['task1', 'task2', 'task3', 'task4', 'task5',],
             datasets: [{
-                data: [86, 114, 106, 106, 107],
+                data: ["{{data[0][0]}}", 114, 106, 106, 107],
                 label: "Max",
                 borderColor: "#3e95cd:",
                 fill: false
