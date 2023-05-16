@@ -2,7 +2,7 @@ const express = require('express');
 const app = express();
 const path = require('path');
 const multer = require('multer');
-const mysql = require('mysql');
+const mysql = require('mysql2');
 const fs = require('fs');
 const nunjucks = require('nunjucks');
 nunjucks.configure('chart', {
@@ -26,7 +26,7 @@ process.on('SIGINT', () => {
 
 // MySQL connection 설정
 const connection = mysql.createConnection(
-    {host: 'localhost', user: 'root', password: '', database: ''}
+    {host: 'localhost', user: 'user1', password: '123456', database: 'nodejs'}
 );
 
 // 파일 업로드를 위한 multer 설정
@@ -41,42 +41,115 @@ const storage = multer.diskStorage({
 const upload = multer({storage: storage});
 
 //배열선언
-let coretask_value = [[     //task1 에서 [core1], [core2], [core3], [core4], [core5]끼리 총 10개임
-        [], [], [], [], []
-    ], [                    //task2 에서 [core1], [core2], [core3], [core4], [core5]끼리
-        [], [], [], [], []
-    ], [                    //task3 에서 [core1], [core2], [core3], [core4], [core5]끼리
-        [], [], [], [], []
-    ], [                    //task4 에서 [core1], [core2], [core3], [core4], [core5]끼리
-        [], [], [], [], []
-    ], [                    //task5 에서 [core1], [core2], [core3], [core4], [core5]끼리
-        [], [], [], [], []
-    ]];
-let coretask_result = [[
-        [], [], [], [], []
-    ], [
-        [], [], [], [], []
-    ], [
-        [], [], [], [], []
-    ], [
-        [], [], [], [], []
-    ], [
-        [], [], [], [], []
-    ]];
+let coretask_value = [
+    [
+        //task1 에서 [core1], [core2], [core3], [core4], [core5]끼리 총 10개임
+        [],
+        [],
+        [],
+        [],
+        []
+    ],
+    [
+        //task2 에서 [core1], [core2], [core3], [core4], [core5]끼리
+        [],
+        [],
+        [],
+        [],
+        []
+    ],
+    [
+        //task3 에서 [core1], [core2], [core3], [core4], [core5]끼리
+        [],
+        [],
+        [],
+        [],
+        []
+    ],
+    [
+        //task4 에서 [core1], [core2], [core3], [core4], [core5]끼리
+        [],
+        [],
+        [],
+        [],
+        []
+    ],
+    [
+        //task5 에서 [core1], [core2], [core3], [core4], [core5]끼리
+        [],
+        [],
+        [],
+        [],
+        []
+    ]
+];
+let coretask_result = [
+    [
+        //core1 에서 [task1의 계산 값들(5개)], [task1의 계산 값들(5개)], [task1의 계산 값들(5개)], [task1의 계산 값들(5개)], [task1의 계산 값들(5개)],
+        [],
+        [],
+        [],
+        [],
+        []
+    ],
+    [
+        [],
+        [],
+        [],
+        [],
+        []
+    ],
+    [
+        [],
+        [],
+        [],
+        [],
+        []
+    ],
+    [
+        [],
+        [],
+        [],
+        [],
+        []
+    ],
+    [
+        [],
+        [],
+        [],
+        [],
+        []
+    ]
+];
 
 // 업로드된 파일을 처리하는 라우터 파일로 들어온 데이터 가공하고 DB에 저장
 app.post('/upload', upload.single('userfile'), (req, res, next) => {
-    // res.sendFile(path.join(__dirname, 'chart/main.html')); const file = req.file;
-    // if (!file)     res.send('파일 불러오셈!!'); res.send('업로드 됨!!');
 
-    const fileContent = fs.readFileSync('uploads/inputFile.txt', 'utf-8');
-    const frows = fileContent
-        .trim()
-        .trim('\n')
-        .split('\t')
-        .filter(num => !isNaN(num))
-        .filter(element => element !== '\n\n');
+    //새로운 파일을 위해 기존 기록 제거
+    connection.query('DELETE FROM table_name');
 
+    //파일이 위치한 디렉토리 경로
+    const directoryPath = 'uploads/'; 
+
+    //파일 이름 목록 읽기
+    const files = fs.readdirSync(directoryPath); //uploads/
+
+    const fileName = files[0]; //어차피 db에 넣은 파일 다시 삭제할거라 첫번째 파일만 읽게 함
+
+    const fileContent = fs.readFileSync(directoryPath + fileName, 'utf-8');// ex).uploads/inputFile.txt
+
+    // 숫자 값만 받아오는 코드 이럴 경우 core1에 '1'부분도 가져오게 됨 이럴 경우
+    const frows = fileContent.match(/\d+/g);
+
+    //core1 <-에 붙은 숫자 제거
+    for (let i = 0; i < frows.length; i++) {
+        if (frows[i] === '1' || frows[i] === '2' || frows[i] === '3' || frows[i] === '4' || frows[i] === '5') {
+            frows.splice(i, 1);
+            i--;
+        }
+    }
+
+    //제거 후 frows에 저장된 배열 값 rows 배열에 넣어주기
     const rows = [];
     const numColumns = 5;
     for (let i = 0; i < frows.length; i += numColumns) {
@@ -84,10 +157,12 @@ app.post('/upload', upload.single('userfile'), (req, res, next) => {
         rows.push(row);
     }
 
-    // MySQL DB 연결     connection.connect((err) => {       if (err)           throw
-    // err;       console.log('Connected to MySQL server~');   }); 전에 저장된 데이터들 삭제
-    connection.query('DELETE FROM table_name', [rows]);
-
+    fs.unlink(directoryPath + fileName, err => {
+        if (err) 
+            throw err;
+        
+        console.log('File is deleted.');
+    });
     // 삽입 쿼리 생성
     connection.query(
         'INSERT INTO table_name (task1, task2, task3, task4, task5) VALUES ?',
@@ -95,7 +170,7 @@ app.post('/upload', upload.single('userfile'), (req, res, next) => {
         (err) => {
             if (err) 
                 throw err;
-            console.log(`Inserted ${rows.length} rows.`);
+            console.log(`Inserted ${rows.length} rows.`); //행 길이 갯수 ? 아무튼
         }
     );
 
@@ -108,6 +183,7 @@ app.post('/upload', upload.single('userfile'), (req, res, next) => {
             
             //데이터를 저장할 이차원 배열
             const data = [];
+            
             //결과를 위해 배열에 저장
             for (let i = 0; i < results.length; i++) {
                 const row = results[i];
@@ -145,60 +221,61 @@ app.post('/upload', upload.single('userfile'), (req, res, next) => {
             }
 
             //coertask_result값 넣기
-            for(let i = 0; i<5; i++){
-                for(let j = 0; j<5; j++){
-                    let a = Math.max.apply(null,coretask_value[i][j]);
-                    let b = Math.min.apply(null, coretask_value[i][j]);
+            for (let i = 0; i < 5; i++) {
+                for (let j = 0; j < 5; j++) {
+                    let a = Math
+                        .max
+                        .apply(null, coretask_value[i][j]);
+                    let b = Math
+                        .min
+                        .apply(null, coretask_value[i][j]);
                     let c = avg(coretask_value[i][j]);
                     let d = standard_deviation(coretask_value[i][j]);
                     let e = median(coretask_value[i][j]);
-                    coretask_result[i][j].push(a,b,c,d,e);
+                    coretask_result[i][j].push(a, b, c, d, e);
                 }
             }
-            console.log(coretask_result);
-
 
             //avg 평균 계산 함수
-            function avg(arr1){
+            function avg(arr1) {
                 let avg = 0;
                 let sum = 0;
-                for(let i = 0; i<arr1.length; i++){
-                    sum+= parseInt(arr1[i]);
+                for (let i = 0; i < arr1.length; i++) {
+                    sum += parseInt(arr1[i]);
                 }
-                avg = sum/arr1.length;
+                avg = sum / arr1.length;
                 return Math.floor(avg);
             }
 
             //standard_deviation 표준편차 계산 함수
-            function standard_deviation(arr1){
+            function standard_deviation(arr1) {
                 let mean = avg(arr1);
                 let total = 0;
-                for(let i=0; i<arr1.length; i++){
+                for (let i = 0; i < arr1.length; i++) {
                     let deviation = arr1[i] - mean;
                     total = deviation ** 2;
                 }
-                let a = Math.sqrt((total/(arr1.length-1)));
+                let a = Math.sqrt((total / (arr1.length - 1)));
                 return Math.floor(a);
             }
 
             //median 중앙값 계산 함수
-            function median(arr1){
+            function median(arr1) {
 
-                arr1.sort(function(a,b){
-                    return a-b;
+                arr1.sort(function (a, b) {
+                    return a - b;
                 });
 
                 return parseInt(arr1[4])
             }
-            //res.render('main.html', {data});
+
+            console.log(coretask_result);
+            res.render('main.html', {coretask_result});
+
         }
     );
 
-    fs.unlink('uploads/inputFile.txt', err => {
-        if (err) 
-            throw err;
-        
-        console.log('File is deleted.');
-    });
+   
+
 });
 //이 부분까지 inputFile.txt파일을 넣고 MySQL DB에 넣기 위한 과정!!!
