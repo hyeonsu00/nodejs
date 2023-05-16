@@ -278,4 +278,4 @@ app.post('/upload', upload.single('userfile'), (req, res, next) => {
    
 
 });
-//이 부분까지 inputFile.txt파일을 넣고 MySQL DB에 넣기 위한 과정!!!
+//이 부분까지 inputFile.txt파일을 넣고 MySQL DB에 넣기 위한 과정!!
